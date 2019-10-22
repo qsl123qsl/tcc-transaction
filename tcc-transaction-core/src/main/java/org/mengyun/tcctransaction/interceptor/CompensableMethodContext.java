@@ -84,6 +84,11 @@ public class CompensableMethodContext {
         return method;
     }
 
+    /**
+     * 计算方法类型
+     * @param isTransactionActive  是否事务开启
+     * @return
+     */
     public MethodRole getMethodRole(boolean isTransactionActive) {
         if ((propagation.equals(Propagation.REQUIRED) && !isTransactionActive && transactionContext == null) ||
                 propagation.equals(Propagation.REQUIRES_NEW)) {

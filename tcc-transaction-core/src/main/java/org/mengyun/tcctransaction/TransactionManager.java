@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 
 /**
  * Created by changmingxie on 10/26/15.
+ *
+ * 事务管理器
  */
 public class TransactionManager {
 
@@ -36,6 +38,11 @@ public class TransactionManager {
 
     }
 
+    /**
+     * 发起根事务
+     * @param uniqueIdentify
+     * @return
+     */
     public Transaction begin(Object uniqueIdentify) {
         Transaction transaction = new Transaction(uniqueIdentify,TransactionType.ROOT);
         transactionRepository.create(transaction);
@@ -43,6 +50,10 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 发起根事务
+     * @return
+     */
     public Transaction begin() {
         Transaction transaction = new Transaction(TransactionType.ROOT);
         transactionRepository.create(transaction);
@@ -50,6 +61,11 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 传播发起分支事务
+     * @param transactionContext
+     * @return
+     */
     public Transaction propagationNewBegin(TransactionContext transactionContext) {
 
         Transaction transaction = new Transaction(transactionContext);
@@ -59,10 +75,17 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 传播获取分支事务
+     * @param transactionContext
+     * @return
+     * @throws NoExistedTransactionException
+     */
     public Transaction propagationExistBegin(TransactionContext transactionContext) throws NoExistedTransactionException {
         Transaction transaction = transactionRepository.findByXid(transactionContext.getXid());
 
         if (transaction != null) {
+            // 设置 事务 状态
             transaction.changeStatus(TransactionStatus.valueOf(transactionContext.getStatus()));
             registerTransaction(transaction);
             return transaction;
@@ -71,6 +94,10 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * 提交事务
+     * @param asyncCommit 是否异步提交事务，基于ExecutorService
+     */
     public void commit(boolean asyncCommit) {
 
         final Transaction transaction = getCurrentTransaction();
@@ -99,7 +126,10 @@ public class TransactionManager {
         }
     }
 
-
+    /**
+     * 回滚事务
+     * @param asyncRollback   是否异步回滚事务，基于ExecutorService
+     */
     public void rollback(boolean asyncRollback) {
 
         final Transaction transaction = getCurrentTransaction();
@@ -183,6 +213,10 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * 添加参与者到事务
+     * @param participant 参与者
+     */
     public void enlistParticipant(Participant participant) {
         Transaction transaction = this.getCurrentTransaction();
         transaction.enlistParticipant(participant);

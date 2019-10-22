@@ -7,6 +7,10 @@ import org.aspectj.lang.annotation.Pointcut;
 
 /**
  * Created by changmingxie on 10/30/15.
+ *
+ * 针对注解@Compensable的切面
+ *
+ * 通过 org.aspectj.lang.annotation.@Pointcut + org.aspectj.lang.annotation.@Around 注解，配置对@Compensable注解的方法进行拦截
  */
 @Aspect
 public abstract class CompensableTransactionAspect {

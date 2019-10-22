@@ -38,8 +38,14 @@ public class CompensableTransactionInterceptor {
 
     public Object interceptCompensableMethod(ProceedingJoinPoint pjp) throws Throwable {
 
+        /**
+         * 获取CompensableMethodContext，这里有@Compensable注解，方法，事务上下文
+         */
         CompensableMethodContext compensableMethodContext = new CompensableMethodContext(pjp);
 
+        /**
+         * 当前线程是否在事务中
+         */
         boolean isTransactionActive = transactionManager.isTransactionActive();
 
         if (!TransactionUtils.isLegalTransactionContext(isTransactionActive, compensableMethodContext)) {
@@ -57,6 +63,12 @@ public class CompensableTransactionInterceptor {
     }
 
 
+    /**
+     * 当方法类型为 MethodType.ROOT 时，调用此方法，发起TCC整体流程
+     * @param compensableMethodContext
+     * @return
+     * @throws Throwable
+     */
     private Object rootMethodProceed(CompensableMethodContext compensableMethodContext) throws Throwable {
 
         Object returnValue = null;
@@ -73,8 +85,14 @@ public class CompensableTransactionInterceptor {
 
         try {
 
+            /**
+             * 发起根事务
+             */
             transaction = transactionManager.begin(compensableMethodContext.getUniqueIdentity());
 
+            /**
+             * 执行方法原逻辑
+             */
             try {
                 returnValue = compensableMethodContext.proceed();
             } catch (Throwable tryingException) {
@@ -83,21 +101,36 @@ public class CompensableTransactionInterceptor {
 
                     logger.warn(String.format("compensable transaction trying failed. transaction content:%s", JSON.toJSONString(transaction)), tryingException);
 
+                    /**
+                     * 回滚事务，如果原逻辑执行异常时候
+                     */
                     transactionManager.rollback(asyncCancel);
                 }
 
                 throw tryingException;
             }
 
+            /**
+             * 提交事务
+             */
             transactionManager.commit(asyncConfirm);
 
         } finally {
+            /**
+             * 将事务从当前线程事务队列中移除
+             */
             transactionManager.cleanAfterCompletion(transaction);
         }
 
         return returnValue;
     }
 
+    /**
+     * 当方法类型为 Propagation.PROVIDER 时，服务提供者参与 TCC 整体流程
+     * @param compensableMethodContext
+     * @return
+     * @throws Throwable
+     */
     private Object providerMethodProceed(CompensableMethodContext compensableMethodContext) throws Throwable {
 
         Transaction transaction = null;
@@ -111,11 +144,20 @@ public class CompensableTransactionInterceptor {
 
             switch (TransactionStatus.valueOf(compensableMethodContext.getTransactionContext().getStatus())) {
                 case TRYING:
+                    /**
+                     * 传播发起分支事务
+                     */
                     transaction = transactionManager.propagationNewBegin(compensableMethodContext.getTransactionContext());
                     return compensableMethodContext.proceed();
                 case CONFIRMING:
                     try {
+                        /**
+                         * 传播获取分支事务
+                         */
                         transaction = transactionManager.propagationExistBegin(compensableMethodContext.getTransactionContext());
+                        /**
+                         * 提交事务
+                         */
                         transactionManager.commit(asyncConfirm);
                     } catch (NoExistedTransactionException excepton) {
                         //the transaction has been commit,ignore it.
@@ -124,7 +166,13 @@ public class CompensableTransactionInterceptor {
                 case CANCELLING:
 
                     try {
+                        /**
+                         * 传播获取分支事务
+                         */
                         transaction = transactionManager.propagationExistBegin(compensableMethodContext.getTransactionContext());
+                        /**
+                         * 回滚事务
+                         */
                         transactionManager.rollback(asyncCancel);
                     } catch (NoExistedTransactionException exception) {
                         //the transaction has been rollback,ignore it.
@@ -133,6 +181,9 @@ public class CompensableTransactionInterceptor {
             }
 
         } finally {
+            /**
+             * 将事务从当前线程事务队列移除
+             */
             transactionManager.cleanAfterCompletion(transaction);
         }
 

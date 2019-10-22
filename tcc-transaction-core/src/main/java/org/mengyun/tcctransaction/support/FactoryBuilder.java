@@ -14,10 +14,22 @@ public final class FactoryBuilder {
 
     }
 
+    /**
+     * bean工厂集合
+     */
     private static List<BeanFactory> beanFactories = new ArrayList<BeanFactory>();
 
+    /**
+     * 类与bean工厂的映射
+     */
     private static ConcurrentHashMap<Class, SingeltonFactory> classFactoryMap = new ConcurrentHashMap<Class, SingeltonFactory>();
 
+    /**
+     * 获取指定的类单例工厂
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public static <T> SingeltonFactory<T> factoryOf(Class<T> clazz) {
 
         if (!classFactoryMap.containsKey(clazz)) {
@@ -40,10 +52,20 @@ public final class FactoryBuilder {
         beanFactories.add(beanFactory);
     }
 
+    /**
+     * 单例工厂
+     * @param <T>
+     */
     public static class SingeltonFactory<T> {
 
+        /**
+         * 单例
+         */
         private volatile T instance = null;
 
+        /**
+         * 类名
+         */
         private String className;
 
         public SingeltonFactory(Class<T> clazz, T instance) {
@@ -55,6 +77,12 @@ public final class FactoryBuilder {
             this.className = clazz.getName();
         }
 
+        /**
+         * 获得单例
+         *
+         * 经典的单例模式
+         * @return
+         */
         public T getInstance() {
 
             if (instance == null) {

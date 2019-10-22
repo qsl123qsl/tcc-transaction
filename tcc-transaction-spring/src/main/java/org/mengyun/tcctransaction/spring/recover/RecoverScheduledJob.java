@@ -9,6 +9,8 @@ import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 
 /**
  * Created by changming.xie on 6/2/16.
+ *
+ * 事务重试定时任务，基于Quartz实现调度
  */
 public class RecoverScheduledJob {
 

@@ -13,18 +13,36 @@ import java.lang.reflect.Method;
 @Target({ElementType.METHOD})
 public @interface Compensable {
 
+    /**
+     * 传播级别
+     */
     public Propagation propagation() default Propagation.REQUIRED;
 
+    /**
+     * 确认执行业务方法
+     */
     public String confirmMethod() default "";
 
+    /**
+     * 取消执行业务方法
+     */
     public String cancelMethod() default "";
 
+    /**
+     * 事务上下文编辑器，用于设置和获得事务上下文( TransactionContext )
+     */
     public Class<? extends TransactionContextEditor> transactionContextEditor() default DefaultTransactionContextEditor.class;
 
     public Class<? extends Exception>[] delayCancelExceptions() default {};
 
+    /**
+     * 是否异步提交事务，默认为否
+     */
     public boolean asyncConfirm() default false;
 
+    /**
+     * 是否异步回滚事务，默认为否
+     */
     public boolean asyncCancel() default false;
 
     class NullableTransactionContextEditor implements TransactionContextEditor {
@@ -62,6 +80,12 @@ public @interface Compensable {
             }
         }
 
+        /**
+         * 获得事务上下文在方法参数里的位置
+         *
+         * @param parameterTypes 参数类型集合
+         * @return 位置
+         */
         public static int getTransactionContextParamPosition(Class<?>[] parameterTypes) {
 
             int position = -1;
